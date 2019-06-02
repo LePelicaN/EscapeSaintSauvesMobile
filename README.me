@@ -1,0 +1,34 @@
+== Creating the project ==
+cd <workspace_path>
+git clone https://github.com/LePelicaN/EscapeSaintSauvesMobile.git
+cd .\EscapeSaintSauvesMobile\
+dotnet new fabulous-app -n EscapeSaintSauves
+git add .
+git commit -am "Default fabulous-app"
+git push
+
+== Building the project ==
+// Open in VisualStudio by double clicking EscapeSaintSauves.sln
+// Build with Ctrl+Shift+B
+
+
+== Launching the project ==
+// Launch the emulator:
+  Set-Item Env:ANDROID_SDK_ROOT <android_sdk_path>
+  $Env:ANDROID_SDK_ROOT
+  Set-Item Env:ANDROID_HOME <android_sdk_path>
+  $Env:ANDROID_HOME
+  
+  cd $Env:ANDROID_SDK_ROOT\emulator
+  .\emulator.exe -list-avds
+  .\emulator.exe -avd Nexus9_28
+// Change project from EscapeSaintSauves (the core project) to EscapeSaintSauves.Android (the android project)
+// Choose the target simulator launched previously
+// Run
+
+
+
+
+pb nuget: https://docs.microsoft.com/en-us/xamarin/cross-platform/troubleshooting/questions/nuget-packages-missing
+
+error MSB6006: "java.exe" exited with code 2. : https://forums.xamarin.com/discussion/97803/getting-error-java-exe-exited-with-code-2

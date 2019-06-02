@@ -5,56 +5,230 @@ open System.Diagnostics
 open Fabulous.Core
 open Fabulous.DynamicViews
 open Xamarin.Forms
+open System
 
-module App = 
-    type Model = 
-      { Count : int
-        Step : int
-        TimerOn: bool }
+module Clue =
+    type AnswerInputType =
+    | TextAnswer
+    | NumberAnswer
 
-    type Msg = 
-        | Increment 
-        | Decrement 
-        | Reset
-        | SetStep of int
-        | TimerToggled of bool
-        | TimedTick
+    type Clue = {
+        buttonText: string
+        inputType: AnswerInputType
+        questionText: string
+        correctAnswer: string
+        textClue: string option
+        imageClue: ImageSource option
+        soundClue: string option
+        videoClue: string option
+    }
 
-    let initModel = { Count = 0; Step = 1; TimerOn=false }
+    let clues =
+        [
+            {
+                buttonText="Lastname"
+                inputType=AnswerInputType.TextAnswer
+                questionText="Give me a lastname!!!"
+                correctAnswer="Toto"
+                textClue=Some "Here is my clue for you!"
+                imageClue=None
+                soundClue=None
+                videoClue=None
+            };
+            {
+                buttonText="Firstname"
+                inputType=AnswerInputType.TextAnswer
+                questionText="Give me a firstname!!!"
+                correctAnswer="Jc"
+                textClue=None
+                imageClue=Some (ImageSource.FromResource("EscapeSaintSauves.XamarinLogo.png"))
+                soundClue=None
+                videoClue=None
+            };
+            {
+                buttonText="Date"
+                inputType=AnswerInputType.NumberAnswer
+                questionText="Give me a date!!!"
+                correctAnswer="12"
+                textClue=None
+                imageClue=None
+                soundClue=None
+                videoClue=Some "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+            }
+        ]
+
+module App =
+    open MediaManager
+    open MediaManager.Video
+    open System.Reflection
+
+    type PageId =
+    | HomePageId
+    | InputPageId
+    | ResultPageId
+    | ErrorPageId
+
+    type Model = {
+        Page: PageId
+        Clue: Clue.Clue option
+        Proposition: string option
+    }
+
+    type Msg =
+        | GoTo of PageId
+        | GoToInput of Clue.Clue
+        | PropositionChanged of string
+        | CheckSolution
+
+    let initModel = {
+        Page = HomePageId
+        Clue = None
+        Proposition = None
+    }
 
     let init () = initModel, Cmd.none
 
-    let timerCmd = 
-        async { do! Async.Sleep 200
-                return TimedTick }
-        |> Cmd.ofAsyncMsg
-
-    let update msg model =
+    let rec update msg model =
         match msg with
-        | Increment -> { model with Count = model.Count + model.Step }, Cmd.none
-        | Decrement -> { model with Count = model.Count - model.Step }, Cmd.none
-        | Reset -> init ()
-        | SetStep n -> { model with Step = n }, Cmd.none
-        | TimerToggled on -> { model with TimerOn = on }, (if on then timerCmd else Cmd.none)
-        | TimedTick -> 
-            if model.TimerOn then 
-                { model with Count = model.Count + model.Step }, timerCmd
-            else 
-                model, Cmd.none
+        | GoTo pageId ->
+            let prop = if model.Page = InputPageId then model.Proposition else None
+            { model with Proposition = prop ; Page = pageId }, Cmd.none
+        | GoToInput clue ->
+            update (GoTo InputPageId) { model with Clue = Some clue }
+        | PropositionChanged proposition ->
+            { model with Proposition = Some proposition }, Cmd.none
+        | CheckSolution ->
+            let page = if model.Proposition.IsSome && model.Proposition.Value = model.Clue.Value.correctAnswer then ResultPageId else ErrorPageId
+            update (GoTo page) model
 
     let view (model: Model) dispatch =
+        let header =
+            View.StackLayout(
+                orientation = StackOrientation.Horizontal,
+                padding = 20.0,
+                verticalOptions = LayoutOptions.Start,
+                children = [
+                    yield View.Button(
+                        text = "ApplicationName",
+                        command = (fun () -> dispatch (GoTo HomePageId)),
+                        horizontalOptions = LayoutOptions.Center,
+                        backgroundColor = Color.Blue
+                    )
+                    if model.Page <> PageId.HomePageId then
+                        yield View.ImageButton(
+                            source = ImageSource.FromResource("EscapeSaintSauves.icons8-delete-64.png"),
+                            clicked = (fun (_) -> dispatch (GoTo HomePageId)),
+                            horizontalOptions = LayoutOptions.EndAndExpand,
+                            backgroundColor = Color.Yellow
+                        )
+                ],
+                backgroundColor = Color.Orange
+            )
+        let body =
+            match model.Page with
+            | HomePageId ->
+                View.StackLayout(
+                    padding = 20.0,
+                    verticalOptions = LayoutOptions.CenterAndExpand,
+                    children = [
+                        for clue in Clue.clues do
+                            yield View.Button(
+                                text = clue.buttonText,
+                                command = (fun () -> dispatch (GoToInput clue)),
+                                horizontalOptions = LayoutOptions.Center
+                            )
+                    ],
+                    backgroundColor = Color.Red
+                )
+            | InputPageId ->
+                let inputRef = ViewRef<Entry>()
+                let entry = 
+                        View.Entry(
+                            placeholder = model.Clue.Value.questionText,
+                            textChanged=(fun event -> dispatch (PropositionChanged event.NewTextValue)),
+                            horizontalOptions = LayoutOptions.Center,
+                            ref = inputRef,
+                            keyboard =
+                                match model.Clue.Value.inputType with
+                                | Clue.AnswerInputType.NumberAnswer -> Keyboard.Numeric
+                                | Clue.AnswerInputType.TextAnswer -> Keyboard.Text
+                        )
+                //inputRef.Value.Focus() |> ignore
+                View.StackLayout(
+                    padding = 20.0,
+                    verticalOptions = LayoutOptions.Center,
+                    children = [
+                        entry
+                        View.Button(
+                            text = "Propose solution",
+                            command = (fun () -> dispatch CheckSolution),
+                            horizontalOptions = LayoutOptions.Center
+                        )
+                    ]
+                )
+            | ResultPageId ->
+                View.StackLayout(
+                    padding = 20.0,
+                    verticalOptions = LayoutOptions.Center,
+                    children = [
+                        yield View.Label(
+                            text = "Correct answer",
+                            horizontalOptions = LayoutOptions.Center
+                        )
+                        if model.Clue.Value.textClue.IsSome then
+                            yield View.Label(
+                                text = model.Clue.Value.textClue.Value,
+                                horizontalOptions = LayoutOptions.Center
+                            )
+                        if model.Clue.Value.imageClue.IsSome then
+                            yield View.Image(
+                                source = model.Clue.Value.imageClue.Value,
+                                horizontalOptions = LayoutOptions.Center
+                            )
+                        if model.Clue.Value.videoClue.IsSome then
+                            yield View.VideoView(
+                                source = model.Clue.Value.videoClue.Value,
+                                ShowControls = true,
+                                heightRequest = 500.,
+                                widthRequest = 200.,
+                                minimumHeightRequest = 1000.,
+                                minimumWidthRequest = 2000.
+                            )
+                        yield View.Button(
+                            text = "Ok",
+                            command = (fun () -> dispatch (GoTo HomePageId)),
+                            horizontalOptions = LayoutOptions.Center
+                        )
+                    ]
+                )
+            | ErrorPageId ->
+                View.StackLayout(
+                    children = [
+                        View.Label(
+                            text = "Wrong answer",
+                            horizontalOptions = LayoutOptions.Center,
+                            horizontalTextAlignment=TextAlignment.Center
+                        )
+                        View.Button(
+                            text = "Go to home",
+                            command = (fun () -> dispatch (GoTo HomePageId)),
+                            horizontalOptions = LayoutOptions.Center
+                        )
+                    ],
+                    verticalOptions = LayoutOptions.CenterAndExpand
+                )
+
         View.ContentPage(
-          content = View.StackLayout(padding = 20.0, verticalOptions = LayoutOptions.Center,
-            children = [ 
-                View.Label(text = sprintf "%d" model.Count, horizontalOptions = LayoutOptions.Center, widthRequest=200.0, horizontalTextAlignment=TextAlignment.Center)
-                View.Button(text = "Increment", command = (fun () -> dispatch Increment), horizontalOptions = LayoutOptions.Center)
-                View.Button(text = "Decrement", command = (fun () -> dispatch Decrement), horizontalOptions = LayoutOptions.Center)
-                View.Label(text = "Timer", horizontalOptions = LayoutOptions.Center)
-                View.Switch(isToggled = model.TimerOn, toggled = (fun on -> dispatch (TimerToggled on.Value)), horizontalOptions = LayoutOptions.Center)
-                View.Slider(minimumMaximum = (0.0, 10.0), value = double model.Step, valueChanged = (fun args -> dispatch (SetStep (int (args.NewValue + 0.5)))), horizontalOptions = LayoutOptions.FillAndExpand)
-                View.Label(text = sprintf "Step size: %d" model.Step, horizontalOptions = LayoutOptions.Center) 
-                View.Button(text = "Reset", horizontalOptions = LayoutOptions.Center, command = (fun () -> dispatch Reset), canExecute = (model <> initModel))
-            ]))
+            content = View.StackLayout(
+                padding = 20.0,
+                verticalOptions = LayoutOptions.FillAndExpand,
+                children = [
+                    header
+                    body
+                ],
+                backgroundColor = Color.Green
+            )
+        )
 
     // Note, this declaration is needed if you enable LiveUpdate
     let program = Program.mkProgram init update view

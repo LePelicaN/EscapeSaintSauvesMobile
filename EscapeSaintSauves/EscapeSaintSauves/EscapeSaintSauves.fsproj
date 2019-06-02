@@ -6,9 +6,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="big_buck_bunny.mp4" />
+    <Compile Include="VideoManager.fs" />
+    <EmbeddedResource Include="icons8-delete-64.png" />
+    <EmbeddedResource Include="XamarinLogo.png" />
+    <Compile Include="Error.fs" />
+    <Compile Include="Home.fs" />
     <Compile Include="EscapeSaintSauves.fs" />
   </ItemGroup>
+
+  <ItemGroup />
   <ItemGroup>
+    <PackageReference Include="Plugin.MediaManager" Version="0.6.2" />
+    <PackageReference Include="Plugin.MediaManager.Forms" Version="0.6.2" />
     <PackageReference Include="Xamarin.Forms" Version="3.4.0.1009999" />
     <PackageReference Include="Xamarin.Essentials" Version="0.6.0-preview" />
     <PackageReference Include="Fabulous.Core" Version="0.32.0" />

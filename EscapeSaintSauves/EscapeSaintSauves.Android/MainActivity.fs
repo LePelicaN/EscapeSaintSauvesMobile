@@ -11,6 +11,7 @@ open Android.Views
 open Android.Widget
 open Android.OS
 open Xamarin.Forms.Platform.Android
+open MediaManager
 
 [<Activity (Label = "EscapeSaintSauves.Android", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = (ConfigChanges.ScreenSize ||| ConfigChanges.Orientation))>]
 type MainActivity() =
@@ -19,6 +20,8 @@ type MainActivity() =
         FormsAppCompatActivity.TabLayoutResource <- Resources.Layout.Tabbar
         FormsAppCompatActivity.ToolbarResource <- Resources.Layout.Toolbar
         base.OnCreate (bundle)
+
+        CrossMediaManager.Current.Init(this)
 
         Xamarin.Essentials.Platform.Init(this, bundle)
 
