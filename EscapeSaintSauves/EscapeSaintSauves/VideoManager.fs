@@ -1,11 +1,8 @@
 ﻿namespace Fabulous.DynamicViews
 
-open Fabulous.DynamicViews
-
 [<AutoOpen>]
 module VideoManagerExtension =
 
-    open Fabulous.Core
     open Fabulous.DynamicViews
     open MediaManager.Forms
     open MediaManager.Video
@@ -15,19 +12,15 @@ module VideoManagerExtension =
     let VideoAspectAttribKey = AttributeKey<_> "VideoManager_VideoAspect"
     let ShowControlsAttribKey = AttributeKey<_> "VideoManager_ShowControls"
 
-    // Fully-qualified name to avoid extending by mistake
-    // another View class (like Xamarin.Forms.View)
     type Fabulous.DynamicViews.View with
         /// Describes a VideoView in the view
-        //static member VideoView(?prop1: seq<ViewElement>, ?prop2: bool, ... inherited attributes ... ) =
-        static member inline VideoView(
-                source: obj, ?videoAspect: VideoAspectMode , ?ShowControls: bool,
-                // inherited attributes common to all views
-                ?horizontalOptions, ?verticalOptions, ?margin, ?gestureRecognizers, ?anchorX, ?anchorY, ?backgroundColor, ?heightRequest,
-                ?inputTransparent, ?isEnabled, ?isVisible, ?minimumHeightRequest, ?minimumWidthRequest, ?opacity,
-                ?rotation, ?rotationX, ?rotationY, ?scale, ?style, ?translationX, ?translationY, ?widthRequest,
-                ?resources, ?styles, ?styleSheets, ?classId, ?styleId, ?automationId, ?created, ?styleClass
-            ) =
+        static member inline VideoView
+            (source: obj, ?videoAspect: VideoAspectMode , ?ShowControls: bool,
+             // inherited attributes common to all views
+             ?horizontalOptions, ?verticalOptions, ?margin, ?gestureRecognizers, ?anchorX, ?anchorY, ?backgroundColor, ?heightRequest,
+             ?inputTransparent, ?isEnabled, ?isVisible, ?minimumHeightRequest, ?minimumWidthRequest, ?opacity,
+             ?rotation, ?rotationX, ?rotationY, ?scale, ?style, ?translationX, ?translationY, ?widthRequest,
+             ?resources, ?styles, ?styleSheets, ?classId, ?styleId, ?automationId, ?created, ?styleClass) =
 
             // Count the number of additional attributes
             let attribCount = 1 // source
@@ -36,8 +29,8 @@ module VideoManagerExtension =
             let attribCount = incIfSome ShowControls attribCount
 
             // Populate the attributes of the base element
-            //let attribs = ViewBuilders.BuildBASE(attribCount, ... inherited attributes ... )
-            let attribs = ViewBuilders.BuildView(attribCount, ?horizontalOptions=horizontalOptions, ?verticalOptions=verticalOptions,
+            let attribs =
+                ViewBuilders.BuildView(attribCount, ?horizontalOptions=horizontalOptions, ?verticalOptions=verticalOptions,
                                        ?margin=margin, ?gestureRecognizers=gestureRecognizers, ?anchorX=anchorX, ?anchorY=anchorY,
                                        ?backgroundColor=backgroundColor, ?heightRequest=heightRequest, ?inputTransparent=inputTransparent,
                                        ?isEnabled=isEnabled, ?isVisible=isVisible, ?minimumHeightRequest=minimumHeightRequest,
@@ -53,15 +46,16 @@ module VideoManagerExtension =
             addIfSome attribs videoAspect VideoAspectAttribKey
             addIfSome attribs ShowControls ShowControlsAttribKey
 
-            // The creation method
+            // The create method
             let create () = new VideoView()
 
-            // The incremental update method
-            let update (prev: ViewElement voption) (source: ViewElement) (target: VideoView) =
-                ViewBuilders.UpdateView(prev, source, target)
-                source.UpdatePrimitive(prev, target, SourceAttribKey, (fun target v -> target.Source <- v))
-                source.UpdatePrimitive(prev, target, VideoAspectAttribKey, (fun target v -> target.VideoAspect <- v))
-                source.UpdatePrimitive(prev, target, ShowControlsAttribKey, (fun target v -> target.ShowControls <- v))
+            // The update method
+            let update (prevOpt: ViewElement voption) (source: ViewElement) (target: VideoView) =
+                ViewBuilders.UpdateView(prevOpt, source, target)
+                source.UpdatePrimitive(prevOpt, target, SourceAttribKey, (fun target v -> target.Source <- v))
+                source.UpdatePrimitive(prevOpt, target, VideoAspectAttribKey, (fun target v -> target.VideoAspect <- v))
+                source.UpdatePrimitive(prevOpt, target, ShowControlsAttribKey, (fun target v -> target.ShowControls <- v))
 
-            ViewElement.Create<VideoView>(create, update, attribs)
+            // The element
+            ViewElement.Create(create, update, attribs)
 
