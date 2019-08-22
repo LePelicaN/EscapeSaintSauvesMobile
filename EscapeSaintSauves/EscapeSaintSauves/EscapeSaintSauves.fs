@@ -186,9 +186,15 @@ module App =
                                 horizontalOptions = LayoutOptions.Center
                             )
                         if model.Clue.Value.videoClue.IsSome then
+                            //yield View.VideoView(
+                            //        source = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                            //        showControls = false,
+                            //        heightRequest = 500.,
+                            //        widthRequest = 200.
+                            //        )
                             yield View.VideoView(
                                 source = model.Clue.Value.videoClue.Value,
-                                ShowControls = true,
+                                showControls = true,
                                 heightRequest = 500.,
                                 widthRequest = 200.,
                                 minimumHeightRequest = 1000.,
